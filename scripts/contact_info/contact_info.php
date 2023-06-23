@@ -1,4 +1,6 @@
 <?php
+namespace APP;
+
 class contact_info extends connect
 {
     private $queryPost = 'INSERT INTO contact_info (id_staff, whatsapp, instagram, linkedin, email, address, cel_number) VALUES (:staff, :wpp, :ig, :linkedin, :email, :address, :number)';
@@ -98,7 +100,7 @@ class contact_info extends connect
         try {
             $res = $this->conx->prepare($this->queryGetAll);
             $res->execute();
-            $this->message = ["Code" => 200, "Message" => $res->fetchAll(PDO::FETCH_ASSOC)];
+            $this->message = ["Code" => 200, "Message" => $res->fetchAll(\PDO::FETCH_ASSOC)];
         } catch (\PDOException $e) {
             $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
         } finally {

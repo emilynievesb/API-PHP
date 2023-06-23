@@ -1,4 +1,6 @@
 <?php
+namespace APP;
+
 class campers extends connect
 {
     private $queryPost = 'INSERT INTO campers (id_team_schedule, id_route, id_trainer,id_psycologist, id_teacher, id_level, id_journey,id_staff) VALUES (:team_fk, :route_fk, :trainer_fk, :psycologist_fk, :teacher_fk, :level_fk, :journey_fk, :staff_fk)';
@@ -96,7 +98,7 @@ class campers extends connect
         try {
             $res = $this->conx->prepare($this->queryGetAll);
             $res->execute();
-            $this->message = ["Code" => 200, "Message" => $res->fetchAll(PDO::FETCH_ASSOC)];
+            $this->message = ["Code" => 200, "Message" => $res->fetchAll(\PDO::FETCH_ASSOC)];
         } catch (\PDOException $e) {
             $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
         } finally {

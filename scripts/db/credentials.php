@@ -1,5 +1,7 @@
 <?php
 // Si hay un atributo privado, solo se puede usar en la clase donde está, la herencia no puede acceder a él.
+namespace APP;
+
 abstract class credentials
 {
     // protected $host = 'localhost';

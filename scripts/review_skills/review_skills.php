@@ -1,5 +1,5 @@
 <?php
-
+namespace APP;
 
 class review_skills extends connect
 {
@@ -95,7 +95,7 @@ class review_skills extends connect
         try {
             $res = $this->conx->prepare($this->queryGetAll);
             $res->execute();
-            $this->message = ["Code" => 200, "Message" => $res->fetchAll(PDO::FETCH_ASSOC)];
+            $this->message = ["Code" => 200, "Message" => $res->fetchAll(\PDO::FETCH_ASSOC)];
         } catch (\PDOException $e) {
             $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
         } finally {
