@@ -1,11 +1,24 @@
 <?php
-namespace APP;
+namespace APP\contact_info;
+
+use APP\db\connect;
+use APP\getInstance;
 
 class contact_info extends connect
 {
-    private $queryPost = 'INSERT INTO contact_info (id_staff, whatsapp, instagram, linkedin, email, address, cel_number) VALUES (:staff, :wpp, :ig, :linkedin, :email, :address, :number)';
-    private $queryPut = 'UPDATE contact_info SET id_staff = :staff, whatsapp = :wpp, instagram = :ig, linkedin =:linkedin, email =:email, address =:address,cel_number=:number  WHERE  id = :id';
-    private $queryGetAll = 'SELECT  id AS "id", id_staff AS "staff", whatsapp AS "wpp", instagram AS "ig", linkedin AS "linkedin", email AS "email", address AS "address", cel_number AS "number" FROM contact_info';
+    private $queryPost = 'INSERT INTO contact_info (id_staff, whatsapp, instagram, linkedin, email, address, cel_number) VALUES (:staff_fk, :wpp, :ig, :linkedin, :email, :address, :number)';
+    private $queryPut = 'UPDATE contact_info SET id_staff = :staff_fk, whatsapp = :wpp, instagram = :ig, linkedin =:linkedin, email =:email, address =:address,cel_number=:number  WHERE  id = :id';
+    private $queryGetAll = 'SELECT  contact_info.id AS "id",
+    contact_info.id_staff AS "staff_fk",
+    staff.first_name AS "name_staff_fk",
+    contact_info.whatsapp AS "wpp",
+    contact_info.instagram AS "ig",
+    contact_info.linkedin AS "linkedin",
+    contact_info.email AS "email",
+    contact_info.address AS "address",
+    contact_info.cel_number AS "number"
+    FROM contact_info
+    INNER JOIN staff ON contact_info.id_staff = staff.id';
     private $queryDelete = 'DELETE FROM contact_info WHERE id = :id';
     private $message;
 
@@ -16,14 +29,14 @@ class contact_info extends connect
         parent::__construct();
 
     }
-    public function postContactInfo()
+    public function post_contact_info()
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryPost);
         /**Todas las solicitudes, así sea un connect deben intentarse dentro de un try-catch */
         try {
             /**El bindValue le asigna valores al alias que puse en el queryPost */
-            $res->bindValue("staff", $this->id_staff);
+            $res->bindValue("staff_fk", $this->id_staff);
             $res->bindValue("wpp", $this->whatsapp);
             $res->bindValue("ig", $this->instagram);
             $res->bindValue("linkedin", $this->linkedin);
@@ -41,15 +54,15 @@ class contact_info extends connect
         }
     }
 
-    public function updateContactInfo()
+    public function update_contact_info($id)
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryPut);
         /**Todas las solicitudes, así sea un connect deben intentarse dentro de un try-catch */
         try {
             /**El bindValue le asigna valores al alias que puse en el queryPut */
-            $res->bindValue("id", $this->id);
-            $res->bindValue("staff", $this->id_staff);
+            $res->bindParam("id", $id);
+            $res->bindValue("staff_fk", $this->id_staff);
             $res->bindValue("wpp", $this->whatsapp);
             $res->bindValue("ig", $this->instagram);
             $res->bindValue("linkedin", $this->linkedin);
@@ -72,13 +85,13 @@ class contact_info extends connect
         }
     }
 
-    public function deleteContactInfo()
+    public function delete_contact_info($id)
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryDelete);
         /**Todas las solicitudes, así sea un connect deben intentarse dentro de un try-catch */
         try {
-            $res->bindValue("id", $this->id);
+            $res->bindParam("id", $id);
             /**Execute es para ejecutar */
             $res->execute();
 
@@ -95,7 +108,7 @@ class contact_info extends connect
         }
     }
 
-    public function getAllContactInfo()
+    public function getAll_contact_info()
     {
         try {
             $res = $this->conx->prepare($this->queryGetAll);
