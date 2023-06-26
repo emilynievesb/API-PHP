@@ -1,22 +1,38 @@
 <?php
-namespace APP;
+namespace APP\design_area;
+
+use APP\db\connect;
+use APP\getInstance;
 
 class design_area extends connect
 {
-    private $queryPost = 'INSERT INTO design_area ( id_area, id_staff, id_position, id_journeys) VALUES ( :area_id_fk, :staff_id_fk, :position_id_fk, :journeys_id_fk)';
-    private $queryPut = 'UPDATE design_area SET id_area = :area_id_fk, id_staff = :staff_id_fk, id_position = :position_id_fk,id_journeys  = :journeys_id_fk WHERE  id = :id';
-    private $queryGetAll = 'SELECT  id AS "id", id_area AS "area_id_fk", id_staff AS "staff_id_fk", id_position AS "position_id_fk", id_journeys AS "journeys_id_fk" FROM design_area';
+    private $queryPost = 'INSERT INTO design_area ( id_area, id_staff, id_position, id_journey) VALUES ( :area_id_fk, :staff_id_fk, :position_id_fk, :journey_id_fk)';
+    private $queryPut = 'UPDATE design_area SET id_area = :area_id_fk, id_staff = :staff_id_fk, id_position = :position_id_fk,id_journey  = :journey_id_fk WHERE  id = :id';
+    private $queryGetAll = 'SELECT design_area.id AS "id",
+    design_area.id_area AS "area_id_fk",
+    areas.name_area AS "area_name_fk",
+    design_area.id_staff AS "staff_id_fk",
+    staff.first_name AS "first_name_staff_fk",
+    design_area.id_position AS "position_id_fk",
+    position.name_position AS "name_position_fk",
+    design_area.id_journey AS "journey_id_fk",
+    journey.name_journey AS "name_journey_fk"
+    FROM design_area
+    INNER JOIN areas ON design_area.id_area = areas.id
+    INNER JOIN staff ON design_area.id_staff = staff.id
+    INNER JOIN position ON design_area.id_position = position.id
+    INNER JOIN journey ON design_area.id_journey = journey.id';
     private $queryDelete = 'DELETE FROM design_area WHERE id = :id';
     private $message;
 
     use getInstance;
     //*Se definen el tipo de dato: static, private, public
-    function __construct(private $id = 1, private $id_area = 1, private $id_staff = 1, private $id_position = 1, private $id_journeys = 1)
+    function __construct(private $id = 1, private $id_area = 1, private $id_staff = 1, private $id_position = 1, private $id_journey = 1)
     {
         parent::__construct();
 
     }
-    public function postDesignArea()
+    public function post_design_area()
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryPost);
@@ -26,7 +42,7 @@ class design_area extends connect
             $res->bindValue("area_id_fk", $this->id_area);
             $res->bindValue("staff_id_fk", $this->id_staff);
             $res->bindValue("position_id_fk", $this->id_position);
-            $res->bindValue("journeys_id_fk", $this->id_journeys);
+            $res->bindValue("journey_id_fk", $this->id_journey);
 
             /**Execute es para ejecutar */
             $res->execute();
@@ -40,18 +56,18 @@ class design_area extends connect
         }
     }
 
-    public function updateDesignArea()
+    public function update_design_area($id)
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryPut);
         /**Todas las solicitudes, así sea un connect deben intentarse dentro de un try-catch */
         try {
             /**El bindValue le asigna valores al alias que puse en el queryPut */
-            $res->bindValue("id", $this->id);
+            $res->bindParam("id", $id);
             $res->bindValue("area_id_fk", $this->id_area);
             $res->bindValue("staff_id_fk", $this->id_staff);
             $res->bindValue("position_id_fk", $this->id_position);
-            $res->bindValue("journeys_id_fk", $this->id_journeys);
+            $res->bindValue("journey_id_fk", $this->id_journey);
             /**Execute es para ejecutar */
             $res->execute();
             if ($res->rowCount() > 0) {
@@ -68,13 +84,13 @@ class design_area extends connect
         }
     }
 
-    public function deleteDesignArea()
+    public function delete_design_area($id)
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryDelete);
         /**Todas las solicitudes, así sea un connect deben intentarse dentro de un try-catch */
         try {
-            $res->bindValue("id", $this->id);
+            $res->bindParam("id", $id);
             /**Execute es para ejecutar */
             $res->execute();
 
@@ -91,7 +107,7 @@ class design_area extends connect
         }
     }
 
-    public function getAllDesignArea()
+    public function getAll_design_area()
     {
         try {
             $res = $this->conx->prepare($this->queryGetAll);
