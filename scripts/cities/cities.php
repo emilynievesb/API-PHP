@@ -1,11 +1,22 @@
 <?php
-namespace APP;
+namespace APP\cities;
+
+use APP\db\connect;
+use APP\getInstance;
 
 class cities extends connect
 {
     private $queryPost = 'INSERT INTO cities (name_city, id_region) VALUES (:city, :region_fk)';
     private $queryPut = 'UPDATE cities SET name_city = :city, id_region = :region_fk WHERE  id = :id';
-    private $queryGetAll = 'SELECT  id AS "id", name_city AS "city", id_region AS "region_fk" FROM cities';
+    private $queryGetAll = 'SELECT  cities.id AS "id",
+    cities.name_city AS "city_name",
+    cities.id_region AS "id_region_fk",
+    regions.name_region AS "name_region_fk",
+    countries.name_country AS "name_country_fk"
+    FROM cities
+    INNER JOIN regions ON cities.id_region = regions.id
+    INNER JOIN countries on regions.id_country = countries.id
+    ';
     private $queryDelete = 'DELETE FROM cities WHERE id = :id';
     private $message;
 
@@ -16,7 +27,7 @@ class cities extends connect
         parent::__construct();
 
     }
-    public function postCities()
+    public function post_cities()
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryPost);
@@ -36,14 +47,14 @@ class cities extends connect
         }
     }
 
-    public function updateCities()
+    public function update_cities($id)
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryPut);
         /**Todas las solicitudes, así sea un connect deben intentarse dentro de un try-catch */
         try {
             /**El bindValue le asigna valores al alias que puse en el queryPut */
-            $res->bindValue("id", $this->id);
+            $res->bindParam("id", $id);
             $res->bindValue("city", $this->name_city);
             $res->bindValue("region_fk", $this->id_region);
             /**Execute es para ejecutar */
@@ -62,13 +73,13 @@ class cities extends connect
         }
     }
 
-    public function deleteCities()
+    public function delete_cities($id)
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryDelete);
         /**Todas las solicitudes, así sea un connect deben intentarse dentro de un try-catch */
         try {
-            $res->bindValue("id", $this->id);
+            $res->bindParam("id", $id);
             /**Execute es para ejecutar */
             $res->execute();
 
@@ -85,7 +96,7 @@ class cities extends connect
         }
     }
 
-    public function getAllCities()
+    public function getAll_cities()
     {
         try {
             $res = $this->conx->prepare($this->queryGetAll);
