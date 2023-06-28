@@ -1,5 +1,5 @@
 <?php
-namespace APP;
+namespace APP\db;
 
 
 interface enviroments
@@ -19,7 +19,6 @@ abstract class connect extends credentials implements enviroments
         try {
             $this->conx = new \PDO($this->driver . ":host=" . $this->__get('host') . ";port=" . $this->port . "; dbname=" . $this->__get('dbname') . "; user=" . $this->user . "; password=" . $this->password);
             $this->conx->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-            echo "ok";
         } catch (\PDOException $error) {
             echo "No me pude conectar" . $error->getMessage();
         }
