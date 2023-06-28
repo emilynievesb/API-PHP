@@ -1,0 +1,19 @@
+{
+  "name": "personal/simulacro",
+  "autoload": {
+    "psr-4": {
+      "APP\\": [
+        "./scripts/"
+      ]
+    }
+  },
+  "authors": [
+    {
+      "name": "emilynievesb",
+      "email": "nemily1710@gmail.com"
+    }
+  ],
+  "require": {
+    "bramus/router": "~1.6"
+  }
+}
