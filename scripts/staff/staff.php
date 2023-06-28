@@ -8,6 +8,7 @@ class staff extends connect
 {
     private $queryPost = 'INSERT INTO staff ( doc , first_name, second_name, first_surname, second_surname, eps, id_area, id_city) VALUES ( :doc, :first_name, :second_name,:first_surname, :second_surname, :eps, :area_fk, :city_fk)';
     private $queryPut = 'UPDATE staff SET doc = :doc, first_name = :first_name, second_name  = :second_name, first_surname = :first_surname, second_surname = :second_surname, eps = :eps, id_area = :area_fk, id_city = :city_fk WHERE  id = :id';
+    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "staff"';
     private $queryGetAll = 'SELECT  staff.id AS "id",
     staff.doc  AS "doc",
     staff.first_name AS "first_name",
@@ -16,8 +17,8 @@ class staff extends connect
     staff.second_surname AS "second_surname",
     staff.eps AS "eps",
     staff.id_area AS "id_area_fk",
-    areas.name_area AS "name_area_fk",
     staff.id_city AS "id_city_fk",
+    areas.name_area AS "name_area_fk",
     cities.name_city AS "name_city_fk"
     FROM staff
     INNER JOIN areas ON staff.id_area = areas.id
@@ -31,6 +32,24 @@ class staff extends connect
     {
         parent::__construct();
 
+    }
+    public function getCampos()
+    {
+        $res = $this->conx->prepare($this->queryCampos);
+        try {
+            /**Execute es para ejecutar */
+            $res->execute();
+            $campos = array();
+            while ($row = $res->fetch(\PDO::FETCH_ASSOC)) {
+                $campos[] = $row["column_name"];
+            }
+            $this->message = $campos;
+        } catch (\PDOException $e) {
+            /**Message es un array asociativo */
+            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+        } finally {
+            return ($this->message);
+        }
     }
     public function post_staff()
     {
@@ -53,9 +72,8 @@ class staff extends connect
         } catch (\PDOException $e) {
             /**Message es un array asociativo */
             $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
-
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 
@@ -84,10 +102,16 @@ class staff extends connect
 
             }
         } catch (\PDOException $e) {
-            /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            /**Message es un array asociativo */if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea  no contiene registros asociados en la tabla padre"];
+            } else {
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 
@@ -108,9 +132,16 @@ class staff extends connect
             }
         } catch (\PDOException $e) {
             /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede eliminar el id inicado ya que contiene registros asociados en la tabla $matches[1]"];
+            } else {
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 
@@ -119,11 +150,12 @@ class staff extends connect
         try {
             $res = $this->conx->prepare($this->queryGetAll);
             $res->execute();
-            $this->message = ["Code" => 200, "Message" => $res->fetchAll(\PDO::FETCH_ASSOC)];
+            $campos = $this->getCampos();
+            $this->message = ["Code" => 200, "Message" => $res->fetchAll(\PDO::FETCH_ASSOC), "Campos" => $campos];
         } catch (\PDOException $e) {
             $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 }

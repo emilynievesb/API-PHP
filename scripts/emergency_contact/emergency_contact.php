@@ -7,14 +7,15 @@ use APP\getInstance;
 class emergency_contact extends connect
 {
     private $queryPost = 'INSERT INTO emergency_contact ( id_staff , cel_number, relationship, full_name, email) VALUES ( :staff_id_fk, :cel, :relationship,:full_name, :email)';
+    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "emergency_contact"';
     private $queryPut = 'UPDATE emergency_contact SET id_staff = :staff_id_fk, cel_number = :cel,relationship  = :relationship, full_name = :full_name, email = :email WHERE  id = :id';
     private $queryGetAll = 'SELECT  emergency_contact.id AS "id",
     emergency_contact.id_staff  AS "staff_id_fk",
-    staff.first_name AS "name_staff_fk",
     emergency_contact.cel_number AS "cel",
     emergency_contact.relationship AS "relationship",
     emergency_contact.full_name AS "full_name",
-    emergency_contact.email AS "email"
+    emergency_contact.email AS "email",
+    staff.first_name AS "name_staff_fk"
     FROM emergency_contact
     INNER JOIN staff ON emergency_contact.id_staff = staff.id';
     private $queryDelete = 'DELETE FROM emergency_contact WHERE id = :id';
@@ -26,6 +27,24 @@ class emergency_contact extends connect
     {
         parent::__construct();
 
+    }
+    public function getCampos()
+    {
+        $res = $this->conx->prepare($this->queryCampos);
+        try {
+            /**Execute es para ejecutar */
+            $res->execute();
+            $campos = array();
+            while ($row = $res->fetch(\PDO::FETCH_ASSOC)) {
+                $campos[] = $row["column_name"];
+            }
+            $this->message = $campos;
+        } catch (\PDOException $e) {
+            /**Message es un array asociativo */
+            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+        } finally {
+            return ($this->message);
+        }
     }
     public function post_emergency_contact()
     {
@@ -47,7 +66,7 @@ class emergency_contact extends connect
             $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
 
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 
@@ -73,10 +92,16 @@ class emergency_contact extends connect
 
             }
         } catch (\PDOException $e) {
-            /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            /**Message es un array asociativo */if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea  no contiene registros asociados en la tabla padre"];
+            } else {
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 
@@ -97,9 +122,16 @@ class emergency_contact extends connect
             }
         } catch (\PDOException $e) {
             /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede eliminar el id inicado ya que contiene registros asociados en la tabla $matches[1]"];
+            } else {
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 
@@ -108,11 +140,12 @@ class emergency_contact extends connect
         try {
             $res = $this->conx->prepare($this->queryGetAll);
             $res->execute();
-            $this->message = ["Code" => 200, "Message" => $res->fetchAll(\PDO::FETCH_ASSOC)];
+            $campos = $this->getCampos();
+            $this->message = ["Code" => 200, "Message" => $res->fetchAll(\PDO::FETCH_ASSOC), "Campos" => $campos];
         } catch (\PDOException $e) {
             $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 }

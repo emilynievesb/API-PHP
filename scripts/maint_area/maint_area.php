@@ -9,14 +9,15 @@ class maint_area extends connect
 {
     private $queryPost = 'INSERT INTO maint_area ( id_area, id_staff, id_position, id_journey) VALUES ( :area_id_fk, :staff_id_fk, :position_id_fk, :journey_id_fk)';
     private $queryPut = 'UPDATE maint_area SET id_area = :area_id_fk, id_staff = :staff_id_fk, id_position = :position_id_fk,id_journey  = :journey_id_fk WHERE  id = :id';
+    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "maint_area"';
     private $queryGetAll = 'SELECT maint_area.id AS "id",
     maint_area.id_area AS "area_id_fk",
-    areas.name_area AS "area_name_fk",
     maint_area.id_staff AS "staff_id_fk",
-    staff.first_name AS "first_name_staff_fk",
     maint_area.id_position AS "position_id_fk",
-    position.name_position AS "name_position_fk",
     maint_area.id_journey AS "journey_id_fk",
+    areas.name_area AS "area_name_fk",
+    staff.first_name AS "first_name_staff_fk",
+    position.name_position AS "name_position_fk",
     journey.name_journey AS "name_journey_fk"
     FROM maint_area
     INNER JOIN areas ON maint_area.id_area = areas.id
@@ -32,6 +33,24 @@ class maint_area extends connect
     {
         parent::__construct();
 
+    }
+    public function getCampos()
+    {
+        $res = $this->conx->prepare($this->queryCampos);
+        try {
+            /**Execute es para ejecutar */
+            $res->execute();
+            $campos = array();
+            while ($row = $res->fetch(\PDO::FETCH_ASSOC)) {
+                $campos[] = $row["column_name"];
+            }
+            $this->message = $campos;
+        } catch (\PDOException $e) {
+            /**Message es un array asociativo */
+            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+        } finally {
+            return ($this->message);
+        }
     }
     public function post_maint_area()
     {
@@ -51,9 +70,8 @@ class maint_area extends connect
         } catch (\PDOException $e) {
             /**Message es un array asociativo */
             $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
-
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 
@@ -79,10 +97,16 @@ class maint_area extends connect
 
             }
         } catch (\PDOException $e) {
-            /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            /**Message es un array asociativo */if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea  no contiene registros asociados en la tabla padre"];
+            } else {
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 
@@ -103,9 +127,16 @@ class maint_area extends connect
             }
         } catch (\PDOException $e) {
             /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede eliminar el id inicado ya que contiene registros asociados en la tabla $matches[1]"];
+            } else {
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 
@@ -114,11 +145,12 @@ class maint_area extends connect
         try {
             $res = $this->conx->prepare($this->queryGetAll);
             $res->execute();
-            $this->message = ["Code" => 200, "Message" => $res->fetchAll(\PDO::FETCH_ASSOC)];
+            $campos = $this->getCampos();
+            $this->message = ["Code" => 200, "Message" => $res->fetchAll(\PDO::FETCH_ASSOC), "Campos" => $campos];
         } catch (\PDOException $e) {
             $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 }

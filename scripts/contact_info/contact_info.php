@@ -8,15 +8,16 @@ class contact_info extends connect
 {
     private $queryPost = 'INSERT INTO contact_info (id_staff, whatsapp, instagram, linkedin, email, address, cel_number) VALUES (:staff_fk, :wpp, :ig, :linkedin, :email, :address, :number)';
     private $queryPut = 'UPDATE contact_info SET id_staff = :staff_fk, whatsapp = :wpp, instagram = :ig, linkedin =:linkedin, email =:email, address =:address,cel_number=:number  WHERE  id = :id';
+    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "contact_info"';
     private $queryGetAll = 'SELECT  contact_info.id AS "id",
     contact_info.id_staff AS "staff_fk",
-    staff.first_name AS "name_staff_fk",
     contact_info.whatsapp AS "wpp",
     contact_info.instagram AS "ig",
     contact_info.linkedin AS "linkedin",
     contact_info.email AS "email",
     contact_info.address AS "address",
-    contact_info.cel_number AS "number"
+    contact_info.cel_number AS "number",
+    staff.first_name AS "name_staff_fk"
     FROM contact_info
     INNER JOIN staff ON contact_info.id_staff = staff.id';
     private $queryDelete = 'DELETE FROM contact_info WHERE id = :id';
@@ -28,6 +29,25 @@ class contact_info extends connect
     {
         parent::__construct();
 
+    }
+
+    public function getCampos()
+    {
+        $res = $this->conx->prepare($this->queryCampos);
+        try {
+            /**Execute es para ejecutar */
+            $res->execute();
+            $campos = array();
+            while ($row = $res->fetch(\PDO::FETCH_ASSOC)) {
+                $campos[] = $row["column_name"];
+            }
+            $this->message = $campos;
+        } catch (\PDOException $e) {
+            /**Message es un array asociativo */
+            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+        } finally {
+            return ($this->message);
+        }
     }
     public function post_contact_info()
     {
@@ -50,9 +70,10 @@ class contact_info extends connect
             /**Message es un array asociativo */
             $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
+
 
     public function update_contact_info($id)
     {
@@ -78,10 +99,16 @@ class contact_info extends connect
 
             }
         } catch (\PDOException $e) {
-            /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            /**Message es un array asociativo */if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea  no contiene registros asociados en la tabla padre"];
+            } else {
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 
@@ -102,22 +129,31 @@ class contact_info extends connect
             }
         } catch (\PDOException $e) {
             /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede eliminar el id inicado ya que contiene registros asociados en la tabla $matches[1]"];
+            } else {
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
+
 
     public function getAll_contact_info()
     {
         try {
             $res = $this->conx->prepare($this->queryGetAll);
             $res->execute();
-            $this->message = ["Code" => 200, "Message" => $res->fetchAll(\PDO::FETCH_ASSOC)];
+            $campos = $this->getCampos();
+            $this->message = ["Code" => 200, "Message" => $res->fetchAll(\PDO::FETCH_ASSOC), "Campos" => $campos];
         } catch (\PDOException $e) {
             $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 }

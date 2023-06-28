@@ -8,6 +8,7 @@ class regions extends connect
 {
     private $queryPost = 'INSERT INTO regions (name_region, id_country) VALUES (:region, :country_fk)';
     private $queryPut = 'UPDATE regions SET name_region = :region, id_country = :country_fk WHERE  id = :id';
+    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "regions"';
     private $queryGetAll = 'SELECT  regions.id AS "id",
     regions.name_region AS "region",
     regions.id_country AS "id_country_fk",
@@ -23,6 +24,24 @@ class regions extends connect
     {
         parent::__construct();
 
+    }
+    public function getCampos()
+    {
+        $res = $this->conx->prepare($this->queryCampos);
+        try {
+            /**Execute es para ejecutar */
+            $res->execute();
+            $campos = array();
+            while ($row = $res->fetch(\PDO::FETCH_ASSOC)) {
+                $campos[] = $row["column_name"];
+            }
+            $this->message = $campos;
+        } catch (\PDOException $e) {
+            /**Message es un array asociativo */
+            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+        } finally {
+            return ($this->message);
+        }
     }
     public function post_regions()
     {
@@ -40,7 +59,7 @@ class regions extends connect
             /**Message es un array asociativo */
             $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 
@@ -63,10 +82,16 @@ class regions extends connect
 
             }
         } catch (\PDOException $e) {
-            /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            /**Message es un array asociativo */if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea  no contiene registros asociados en la tabla padre"];
+            } else {
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 
@@ -87,9 +112,16 @@ class regions extends connect
             }
         } catch (\PDOException $e) {
             /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede eliminar el id inicado ya que contiene registros asociados en la tabla $matches[1]"];
+            } else {
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 
@@ -98,11 +130,12 @@ class regions extends connect
         try {
             $res = $this->conx->prepare($this->queryGetAll);
             $res->execute();
-            $this->message = ["Code" => 200, "Message" => $res->fetchAll(\PDO::FETCH_ASSOC)];
+            $campos = $this->getCampos();
+            $this->message = ["Code" => 200, "Message" => $res->fetchAll(\PDO::FETCH_ASSOC), "Campos" => $campos];
         } catch (\PDOException $e) {
             $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 }

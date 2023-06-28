@@ -1,10 +1,14 @@
 <?php
-namespace APP;
+namespace APP\countries;
+
+use APP\db\connect;
+use APP\getInstance;
 
 class countries extends connect
 {
     private $queryPost = 'INSERT INTO countries (name_country) VALUES (:name)';
     private $queryPut = 'UPDATE countries SET name_country = :name WHERE  id = :id';
+    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "countries"';
     private $queryGetAll = 'SELECT  id AS "id", name_country AS "name" FROM countries';
     private $queryDelete = 'DELETE FROM countries WHERE id = :id';
     private $message;
@@ -16,7 +20,25 @@ class countries extends connect
         parent::__construct();
 
     }
-    public function postCountries()
+    public function getCampos()
+    {
+        $res = $this->conx->prepare($this->queryCampos);
+        try {
+            /**Execute es para ejecutar */
+            $res->execute();
+            $campos = array();
+            while ($row = $res->fetch(\PDO::FETCH_ASSOC)) {
+                $campos[] = $row["column_name"];
+            }
+            $this->message = $campos;
+        } catch (\PDOException $e) {
+            /**Message es un array asociativo */
+            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+        } finally {
+            return ($this->message);
+        }
+    }
+    public function post_countries()
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryPost);
@@ -31,18 +53,18 @@ class countries extends connect
             /**Message es un array asociativo */
             $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 
-    public function updateCountries()
+    public function update_countries($id)
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryPut);
         /**Todas las solicitudes, así sea un connect deben intentarse dentro de un try-catch */
         try {
             /**El bindValue le asigna valores al alias que puse en el queryPut */
-            $res->bindValue("id", $this->id);
+            $res->bindParam("id", $id);
             $res->bindValue("name", $this->name_country);
             /**Execute es para ejecutar */
             $res->execute();
@@ -53,20 +75,26 @@ class countries extends connect
 
             }
         } catch (\PDOException $e) {
-            /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            /**Message es un array asociativo */if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea  no contiene registros asociados en la tabla padre"];
+            } else {
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 
-    public function deleteCountries()
+    public function delete_countries($id)
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryDelete);
         /**Todas las solicitudes, así sea un connect deben intentarse dentro de un try-catch */
         try {
-            $res->bindValue("id", $this->id);
+            $res->bindParam("id", $id);
             /**Execute es para ejecutar */
             $res->execute();
 
@@ -77,22 +105,30 @@ class countries extends connect
             }
         } catch (\PDOException $e) {
             /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $mensaje = ["Code" => $e->getCode(), "Message" => "Error, no se puede eliminar el id inicado ya que contiene registros asociados en la tabla $matches[1]"];
+            } else {
+                $mensaje = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
-            print_r($this->message);
+            print_r($mensaje);
         }
     }
 
-    public function getAllCountries()
+    public function getAll_countries()
     {
         try {
             $res = $this->conx->prepare($this->queryGetAll);
             $res->execute();
-            $this->message = ["Code" => 200, "Message" => $res->fetchAll(\PDO::FETCH_ASSOC)];
+            $campos = $this->getCampos();
+            $this->message = ["Code" => 200, "Message" => $res->fetchAll(\PDO::FETCH_ASSOC), "Campos" => $campos];
         } catch (\PDOException $e) {
             $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 }
