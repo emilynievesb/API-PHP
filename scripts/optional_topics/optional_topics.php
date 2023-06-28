@@ -1,36 +1,37 @@
 <?php
-namespace APP\english_skills;
+
+namespace APP\optional_topics;
 
 use APP\db\connect;
 use APP\getInstance;
 
-class english_skills extends connect
+class optional_topics extends connect
 {
-    private $queryPost = 'INSERT INTO english_skills ( id_team_schedule , id_journey, id_teacher, id_location, id_subject) VALUES ( :schedule_id_fk, :journey_fk, :teacher_fk,:location_fk, :subject_fk )';
-    private $queryPut = 'UPDATE english_skills SET id_team_schedule = :schedule_id_fk, id_journey = :journey_fk, id_teacher  = :teacher_fk, id_location = :location_fk, id_subject = :subject_fk WHERE  id = :id';
-    private $queryGetAll = 'SELECT  id AS "id", id_team_schedule  AS "schedule_id_fk", id_journey AS "journey_fk", id_teacher AS "teacher_fk", id_location AS "location_fk", id_subject AS "subject_fk" FROM english_skills';
-    private $queryDelete = 'DELETE FROM english_skills WHERE id = :id';
+    private $queryPost = 'INSERT INTO optional_topics ( id_topic, id_team, id_subject, id_camper, id_team_educator) VALUES ( :topic_fk, :team_fk, :subject_fk, :camper_fk, :educator_fk)';
+    private $queryPut = 'UPDATE optional_topics SET id_topic = :area_id, id_team = :team_fk, id_subject = :subject_fk, id_camper  = :camper_fk, id_team_educator  = :educator_fk WHERE id = :id';
+    private $queryGetAll = 'SELECT  id AS "id", id_topic AS "topic_fk", id_team AS "team_fk", id_subject AS "subject_fk", id_camper AS "camper_fk"  FROM optional_topics';
+    private $queryDelete = 'DELETE FROM optional_topics WHERE id = :id';
     private $message;
 
     use getInstance;
     //*Se definen el tipo de dato: static, private, public
-    function __construct(private $id = 1, private $id_team_schedule = 1, private $id_journey = 1, private $id_teacher = 1, private $id_location = 1, private $id_subject = 1)
+    function __construct(private $id = 1, private $id_topic = 1, public $id_team = 1, public $id_subject = 1, public $id_camper = 1, public $id_team_educator = 1)
     {
         parent::__construct();
 
     }
-    public function post_english_skills()
+    public function post_optional_topics()
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryPost);
         /**Todas las solicitudes, así sea un connect deben intentarse dentro de un try-catch */
         try {
             /**El bindValue le asigna valores al alias que puse en el queryPost */
-            $res->bindValue("schedule_id_fk", $this->id_team_schedule);
-            $res->bindValue("journey_fk", $this->id_journey);
-            $res->bindValue("teacher_fk", $this->id_teacher);
-            $res->bindValue("location_fk", $this->id_location);
+            $res->bindValue("topic_fk", $this->id_topic);
+            $res->bindValue("team_fk", $this->id_team);
             $res->bindValue("subject_fk", $this->id_subject);
+            $res->bindValue("camper_fk", $this->id_camper);
+            $res->bindValue("educator_fk", $this->id_team_educator);
             /**Execute es para ejecutar */
             $res->execute();
             $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Inserted data", "res" => $res];
@@ -43,19 +44,19 @@ class english_skills extends connect
         }
     }
 
-    public function update_english_skills()
+    public function update_optional_topics($id)
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryPut);
         /**Todas las solicitudes, así sea un connect deben intentarse dentro de un try-catch */
         try {
             /**El bindValue le asigna valores al alias que puse en el queryPut */
-            $res->bindValue("id", $this->id);
-            $res->bindValue("schedule_id_fk", $this->id_team_schedule);
-            $res->bindValue("journey_fk", $this->id_journey);
-            $res->bindValue("teacher_fk", $this->id_teacher);
-            $res->bindValue("location_fk", $this->id_location);
+            $res->bindParam("id", $id);
+            $res->bindValue("topic_fk", $this->id_topic);
+            $res->bindValue("team_fk", $this->id_team);
             $res->bindValue("subject_fk", $this->id_subject);
+            $res->bindValue("camper_fk", $this->id_camper);
+            $res->bindValue("educator_fk", $this->id_team_educator);
             /**Execute es para ejecutar */
             $res->execute();
             if ($res->rowCount() > 0) {
@@ -72,7 +73,7 @@ class english_skills extends connect
         }
     }
 
-    public function delete_english_skills()
+    public function delete_optional_topics()
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryDelete);
@@ -95,7 +96,7 @@ class english_skills extends connect
         }
     }
 
-    public function getAll_english_skills()
+    public function getAll_optional_topics()
     {
         try {
             $res = $this->conx->prepare($this->queryGetAll);

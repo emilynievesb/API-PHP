@@ -1,5 +1,8 @@
 <?php
-namespace APP;
+namespace APP\chapters;
+
+use APP\db\connect;
+use APP\getInstance;
 
 class chapters extends connect
 {
@@ -15,7 +18,7 @@ class chapters extends connect
     {
         parent::__construct();
     }
-    public function postChapters()
+    public function post_chapters()
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryPost);
@@ -38,7 +41,7 @@ class chapters extends connect
         }
     }
 
-    public function updateChapters()
+    public function update_chapters()
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryPut);
@@ -67,7 +70,7 @@ class chapters extends connect
         }
     }
 
-    public function deleteChapters()
+    public function delete_chapters()
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryDelete);
@@ -90,7 +93,7 @@ class chapters extends connect
         }
     }
 
-    public function getAllChapters()
+    public function getAll_chapters()
     {
         try {
             $res = $this->conx->prepare($this->queryGetAll);

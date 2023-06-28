@@ -1,36 +1,38 @@
 <?php
-namespace APP\english_skills;
+
+namespace APP\modules;
 
 use APP\db\connect;
 use APP\getInstance;
 
-class english_skills extends connect
+class modules extends connect
 {
-    private $queryPost = 'INSERT INTO english_skills ( id_team_schedule , id_journey, id_teacher, id_location, id_subject) VALUES ( :schedule_id_fk, :journey_fk, :teacher_fk,:location_fk, :subject_fk )';
-    private $queryPut = 'UPDATE english_skills SET id_team_schedule = :schedule_id_fk, id_journey = :journey_fk, id_teacher  = :teacher_fk, id_location = :location_fk, id_subject = :subject_fk WHERE  id = :id';
-    private $queryGetAll = 'SELECT  id AS "id", id_team_schedule  AS "schedule_id_fk", id_journey AS "journey_fk", id_teacher AS "teacher_fk", id_location AS "location_fk", id_subject AS "subject_fk" FROM english_skills';
-    private $queryDelete = 'DELETE FROM english_skills WHERE id = :id';
+    private $queryPost = 'INSERT INTO modules ( name_module, start_date, end_date, description, duration_days, id_theme) VALUES ( :module, :start_date, :end_date, :description, :days, :theme_fk)';
+    private $queryPut = 'UPDATE modules SET name_module = :module, start_date = :start_date, end_date = :end_date,description  = :description,duration_days  = :days, id_theme  = :theme_fk WHERE  id = :id';
+    private $queryGetAll = 'SELECT  id AS "id", name_module AS "module", start_date AS "start_date", end_date AS "end_date", description AS "description", duration_days  = :days, id_theme AS "theme_fk",  FROM modules';
+    private $queryDelete = 'DELETE FROM modules WHERE id = :id';
     private $message;
 
     use getInstance;
     //*Se definen el tipo de dato: static, private, public
-    function __construct(private $id = 1, private $id_team_schedule = 1, private $id_journey = 1, private $id_teacher = 1, private $id_location = 1, private $id_subject = 1)
+    function __construct(private $id = 1, private $name_module = 1, public $start_date = 1, public $end_date = 1, public $description = 1, public $duration_days = 1, private $id_theme = 1)
     {
         parent::__construct();
 
     }
-    public function post_english_skills()
+    public function post_modules()
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryPost);
         /**Todas las solicitudes, así sea un connect deben intentarse dentro de un try-catch */
         try {
             /**El bindValue le asigna valores al alias que puse en el queryPost */
-            $res->bindValue("schedule_id_fk", $this->id_team_schedule);
-            $res->bindValue("journey_fk", $this->id_journey);
-            $res->bindValue("teacher_fk", $this->id_teacher);
-            $res->bindValue("location_fk", $this->id_location);
-            $res->bindValue("subject_fk", $this->id_subject);
+            $res->bindValue("module", $this->name_module);
+            $res->bindValue("start_date", $this->start_date);
+            $res->bindValue("end_date", $this->end_date);
+            $res->bindValue("description", $this->description);
+            $res->bindValue("days", $this->duration_days);
+            $res->bindValue("theme_fk", $this->id_theme);
             /**Execute es para ejecutar */
             $res->execute();
             $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Inserted data", "res" => $res];
@@ -43,7 +45,7 @@ class english_skills extends connect
         }
     }
 
-    public function update_english_skills()
+    public function update_modules()
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryPut);
@@ -51,11 +53,12 @@ class english_skills extends connect
         try {
             /**El bindValue le asigna valores al alias que puse en el queryPut */
             $res->bindValue("id", $this->id);
-            $res->bindValue("schedule_id_fk", $this->id_team_schedule);
-            $res->bindValue("journey_fk", $this->id_journey);
-            $res->bindValue("teacher_fk", $this->id_teacher);
-            $res->bindValue("location_fk", $this->id_location);
-            $res->bindValue("subject_fk", $this->id_subject);
+            $res->bindValue("module", $this->name_module);
+            $res->bindValue("start_date", $this->start_date);
+            $res->bindValue("end_date", $this->end_date);
+            $res->bindValue("description", $this->description);
+            $res->bindValue("days", $this->duration_days);
+            $res->bindValue("theme_fk", $this->id_theme);
             /**Execute es para ejecutar */
             $res->execute();
             if ($res->rowCount() > 0) {
@@ -72,7 +75,7 @@ class english_skills extends connect
         }
     }
 
-    public function delete_english_skills()
+    public function delete_modules()
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryDelete);
@@ -95,7 +98,7 @@ class english_skills extends connect
         }
     }
 
-    public function getAll_english_skills()
+    public function getAll_modules()
     {
         try {
             $res = $this->conx->prepare($this->queryGetAll);

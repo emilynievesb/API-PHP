@@ -1,5 +1,8 @@
 <?php
-namespace APP;
+namespace APP\campers;
+
+use APP\db\connect;
+use APP\getInstance;
 
 class campers extends connect
 {
@@ -16,7 +19,7 @@ class campers extends connect
         parent::__construct();
 
     }
-    public function postCampers()
+    public function post_campers()
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryPost);
@@ -40,7 +43,7 @@ class campers extends connect
         }
     }
 
-    public function updateCampers()
+    public function update_campers()
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryPut);
@@ -70,7 +73,7 @@ class campers extends connect
         }
     }
 
-    public function deleteCampers()
+    public function delete_campers()
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryDelete);
@@ -87,13 +90,20 @@ class campers extends connect
             }
         } catch (\PDOException $e) {
             /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $mensaje = ["Code" => $e->getCode(), "Message" => "Error, no se puede eliminar el id inicado ya que contiene registros asociados en la tabla $matches[1]"];
+            } else {
+                $mensaje = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
-            print_r($this->message);
+            print_r($mensaje);
         }
     }
 
-    public function getAllCampers()
+    public function getAll_campers()
     {
         try {
             $res = $this->conx->prepare($this->queryGetAll);
