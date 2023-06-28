@@ -1,50 +1,53 @@
 <?php
-
-
-trait getInstance
-{
-    public static $instance;
-    public static function getInstance()
-    {
-        $arg = func_get_args();
-        $arg = array_pop($arg);
-        return (!(self::$instance instanceof self) || !empty($arg)) ? self::$instance = new static(...(array) $arg) : self::$instance;
-    }
-    //*Set y get mágicos...
-    function __set($name, $value)
-    {
-        $this->$name = $value;
-    }
-
+header('Access-Control-Allow-Origin: *');
+header("Access-Control-Allow-Headers: X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Request-Method");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
+header("Allow: GET, POST, OPTIONS, PUT, DELETE");
+$method = $_SERVER['REQUEST_METHOD'];
+if ($method == "OPTIONS") {
+    die();
 }
+require_once "../vendor/autoload.php";
 
-function autoload($class)
-{
-    //Directorios donde buscar archivod de clases
-    $directories = array();
-    $directorio = dirname(__DIR__) . '/scripts';
-    $elementos = scandir($directorio);
-    foreach ($elementos as $elemento) {
-        $rutaElemento = $directorio . '/' . $elemento . '/';
-        if (is_dir($rutaElemento) && $elemento !== '.' && $elemento !== '..') {
-            $directories[] = $rutaElemento;
-        }
-    }
-    //Convertir el nombre de la clase en un nombre de archivo relativo
-    $classFile = str_replace('\\', '/', $class) . '.php';
+// Create Router instance
+$router = new \Bramus\Router\Router();
 
-    //Recorre los directorios y buscar el archivo de la clase
-    foreach ($directories as $directory) {
-        $file = $directory . $classFile;
-        //Verificar si el archivo existe y cargarlo
-        if (file_exists($file)) {
-            require $file; //!El require solo funciona una vez
-            return; //!El break no funciona muy bien
-        }
-    }
-}
-spl_autoload_register('autoload');
-animal::getInstance();
+//Routes
+$router->get("/campus", function () {
+    $instance = APP\campus\campus::getInstance(json_decode(file_get_contents("php://input"), true));
+    $instance->get_tables();
+});
+$router->get("/{tabla}", function ($tabla) {
+    $class = "APP\\" . $tabla . "\\" . $tabla;
+    $method = "getAll_" . $tabla;
+    $instance = $class::getInstance(json_decode(file_get_contents("php://input"), true));
+    $instance->$method();
+});
+$router->post("/{tabla}/{id}", function ($tabla, $id) {
+    $class = "APP\\" . $tabla . "\\" . $tabla;
+    $method = "get_" . $tabla;
+    $instance = $class::getInstance(json_decode(file_get_contents("php://input"), true));
+    $instance->$method($id);
+});
+$router->post("/{tabla}", function ($tabla) {
+    $class = "APP\\" . $tabla . "\\" . $tabla;
+    $method = "post_" . $tabla;
+    $instance = $class::getInstance(json_decode(file_get_contents("php://input"), true));
+    $instance->$method();
+});
+$router->put("/{tabla}/{id}", function ($tabla, $id) {
+    $class = "APP\\" . $tabla . "\\" . $tabla;
+    $method = "update_" . $tabla;
+    $instance = $class::getInstance(json_decode(file_get_contents("php://input"), true));
+    $instance->$method($id);
+});
+$router->delete("/{tabla}/{id}", function ($tabla, $id) {
+    $class = "APP\\" . $tabla . "\\" . $tabla;
+    $method = "delete_" . $tabla;
+    $instance = $class::getInstance(json_decode(file_get_contents("php://input"), true));
+    $instance->$method($id);
+});
+$router->run();
 
 
 ?>
