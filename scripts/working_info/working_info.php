@@ -14,11 +14,11 @@ class working_info extends connect
     working_info.years_exp AS "n_years",
     working_info.months_exp AS "n_months",
     working_info.id_work_reference AS "work_reference_fk",
-    work_reference.full_name as "name_work_reference_fk",
     working_info.id_personal_ref AS "personal_ref_fk",
-    personal_ref.full_name as "name_personal_ref_fk",
     working_info.start_contract AS "start_contract",
     working_info.end_contract AS "end_contract"
+    personal_ref.full_name as "name_personal_ref_fk",
+    work_reference.full_name as "name_work_reference_fk",
     FROM working_info
     INNER JOIN personal_ref ON working_info.id_personal_ref =  personal_ref.id
     INNER JOIN work_reference ON working_info.id_work_reference = work_reference.id';
