@@ -22,7 +22,7 @@ class team_schedule extends connect
     team_schedule.id_journey AS "id_journey_fk",
     journey.name_journey AS "journey_fk"
     FROM team_schedule
-    INNER JOIN journey on team_schedule.id_journey= journey.id';
+    INNER JOIN journey ON team_schedule.id_journey = journey.id';
     private $queryDelete = 'DELETE FROM team_schedule WHERE id = :id';
     private $message;
 
