@@ -9,7 +9,7 @@ class tutors extends connect
     private $queryPost = 'INSERT INTO tutors (id_staff, id_academic_area, id_position) VALUES (:staff_fk, :academic_area_fk, :position_fk)';
     private $queryPut = 'UPDATE tutors SET id_staff = :staff_fk, id_academic_area = :academic_area_fk, id_position = :position_fk WHERE  id = :id';
     private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "tutors"';
-    private $queryGetAll = 'SELECT  id AS "id",
+    private $queryGetAll = 'SELECT  tutors.id AS "id",
     tutors.id_staff AS "staff_fk",
     tutors.id_academic_area AS "academic_area_fk",
     tutors.id_position AS "position_fk",
