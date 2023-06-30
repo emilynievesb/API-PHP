@@ -142,7 +142,7 @@ li {
   transition: all 0.15s ease;
 }
 #sidebar .side-dropdown.show {
-  max-height: 1000px;
+  max-height: 5000px;
 }
 #sidebar .side-dropdown a:hover {
   color: var(--blue);

@@ -8,10 +8,12 @@ let campos = "";
 async function logJSONData() {
   const response = await fetch(`${URL}campus`);
   const jsonData = await response.json();
+  // console.log(jsonData.Message);
   jsonData.Message.forEach((element) => {
     let nameLink = element.TABLE_NAME.replace(/_/g, " ");
     html += `<li><a href="#" class="a" data-name="${element.TABLE_NAME}">${nameLink}</a></li>`;
   });
+  // console.log(html);
   sideBar.innerHTML = html;
   sideBar2.innerHTML = html;
 }
@@ -107,6 +109,7 @@ sideBar.addEventListener("click", (e) => {
                     data[campos[i]] = INPUT[i].value;
                   }
                 }
+                console.log(data);
                 options = {
                   method: "PUT",
                   headers: {
@@ -124,6 +127,7 @@ sideBar.addEventListener("click", (e) => {
                     }
                   })
                   .then((data) => {
+                    console.log(data.Code);
                     switch (data.Code) {
                       case 201:
                         alert(
@@ -143,7 +147,7 @@ sideBar.addEventListener("click", (e) => {
                     }
                   })
                   .catch((error) => {
-                    console.log(error);
+                    console.log(JSON.stringify(error));
                     console.error("Error:", error);
                     alert("Error al actualizar el recurso: " + error.Message);
                   });
@@ -243,18 +247,21 @@ sideBar2.addEventListener("click", (e) => {
       save.addEventListener("click", (e) => {
         e.preventDefault();
         const INPUTS = document.querySelectorAll("#card-new input");
-        console.log(INPUTS);
         let data = {};
-        for (let i = 0; i < campos.length - 1; i++) {
-          console.log(i);
-          if (i > 0 && i <= campos.length) {
-            if (INPUTS[i].value !== "") {
-              data[campos[i]] = INPUTS[i].value;
+        console.log(INPUTS);
+        for (let i = 0; i < campos.length; i++) {
+          if (i > 0 && i < campos.length) {
+            if (INPUTS[i - 1].value !== "") {
+              console.log(campos[i]);
+              console.log(INPUTS[i - 1].value);
+              data[campos[i]] = INPUTS[i - 1].value;
+              console.log(data);
             } else {
               alert("Por favor complete los datos");
             }
           }
         }
+        console.log(data);
         let options = {
           method: "POST",
           headers: {
@@ -262,9 +269,11 @@ sideBar2.addEventListener("click", (e) => {
           },
           body: JSON.stringify(data),
         };
+        console.log(PRESS.dataset.name);
         fetch(`${URL}${PRESS.dataset.name}`, options)
           .then((response) => {
             if (response.ok) {
+              console.log(response);
               return response.json();
             } else {
               console.log(response);
@@ -272,7 +281,7 @@ sideBar2.addEventListener("click", (e) => {
             }
           })
           .then((data) => {
-            console.log(data);
+            console.log(data.Message);
             switch (data.Code) {
               case 201:
                 alert("Dato agregado correctamente");
@@ -283,8 +292,9 @@ sideBar2.addEventListener("click", (e) => {
           })
           .catch((error) => {
             console.log(JSON.stringify(error));
-            console.error("Error:", error);
-            alert("Error al agregar el recurso: " + error.Message);
+            alert(
+              "Error al agregar el recurso: " + JSON.stringify(error).Message
+            );
           });
         e.stopImmediatePropagation();
       });
