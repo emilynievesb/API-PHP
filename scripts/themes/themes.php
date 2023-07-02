@@ -7,9 +7,19 @@ use APP\getInstance;
 
 class themes extends connect
 {
-    private $queryPost = 'INSERT INTO themes ( id_chapter, start_date, end_date, description, duration_days, name_theme) VALUES ( :chapter_fk, :start_date, :end_date, :description, :days, :theme_name)';
-    private $queryPut = 'UPDATE themes SET id_chapter = :chapter_fk, start_date = :start_date, end_date = :end_date,description  = :description,duration_days  = :days, name_theme  = :theme_name WHERE  id = :id';
-    private $queryGetAll = 'SELECT  id AS "id", id_chapter AS "chapter_fk", start_date AS "start_date", end_date AS "end_date", description AS "description", name_theme AS "theme_name",  FROM themes';
+    private $queryPost = 'INSERT INTO themes ( id_chapter, name_theme, start_date, end_date, description, duration_days ) VALUES ( :chapter_fk, :theme_name, :start_date, :end_date, :description, :days)';
+    private $queryPut = 'UPDATE themes SET id_chapter = :chapter_fk, start_date = :start_date, end_date = :end_date,description  = :description, duration_days  = :days, name_theme  = :theme_name WHERE  id = :id';
+    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "themes" AND table_schema = "campusland"';
+    private $queryGetAll = 'SELECT  themes.id AS "id",
+    themes.id_chapter AS "chapter_fk",
+    themes.name_theme AS "theme_name",
+    themes.start_date AS "start_date",
+    themes.end_date AS "end_date",
+    themes.description AS "description",
+    themes.duration_days AS "days",
+    chapters.name_chapter AS "name_chapter_fk"
+    FROM themes
+    INNER JOIN chapters ON themes.id_chapter = chapters.id';
     private $queryDelete = 'DELETE FROM themes WHERE id = :id';
     private $message;
 
@@ -19,6 +29,24 @@ class themes extends connect
     {
         parent::__construct();
 
+    }
+    public function getCampos()
+    {
+        $res = $this->conx->prepare($this->queryCampos);
+        try {
+            /**Execute es para ejecutar */
+            $res->execute();
+            $campos = array();
+            while ($row = $res->fetch(\PDO::FETCH_ASSOC)) {
+                $campos[] = $row["column_name"];
+            }
+            $this->message = $campos;
+        } catch (\PDOException $e) {
+            /**Message es un array asociativo */
+            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+        } finally {
+            return ($this->message);
+        }
     }
     public function post_themes()
     {
@@ -37,22 +65,27 @@ class themes extends connect
             $res->execute();
             $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Inserted data", "res" => $res];
         } catch (\PDOException $e) {
-            /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
-
+            /**Message es un array asociativo */if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea no contiene registros asociados en la tabla $matches[4]", $matches];
+            } else {
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 
-    public function update_themes()
+    public function update_themes($id)
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryPut);
         /**Todas las solicitudes, así sea un connect deben intentarse dentro de un try-catch */
         try {
             /**El bindValue le asigna valores al alias que puse en el queryPut */
-            $res->bindValue("id", $this->id);
+            $res->bindParam("id", $id);
             $res->bindValue("chapter_fk", $this->id_chapter);
             $res->bindValue("start_date", $this->start_date);
             $res->bindValue("end_date", $this->end_date);
@@ -69,19 +102,26 @@ class themes extends connect
             }
         } catch (\PDOException $e) {
             /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea  no contiene registros asociados en la tabla $matches[4]"];
+            } else {
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 
-    public function delete_themes()
+    public function delete_themes($id)
     {
         /*Prepare es literalmente preparar el query */
         $res = $this->conx->prepare($this->queryDelete);
         /**Todas las solicitudes, así sea un connect deben intentarse dentro de un try-catch */
         try {
-            $res->bindValue("id", $this->id);
+            $res->bindParam("id", $id);
             /**Execute es para ejecutar */
             $res->execute();
 
@@ -92,9 +132,16 @@ class themes extends connect
             }
         } catch (\PDOException $e) {
             /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede eliminar el id inicado ya que contiene registros asociados en la tabla $matches[1]"];
+            } else {
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 
@@ -103,11 +150,12 @@ class themes extends connect
         try {
             $res = $this->conx->prepare($this->queryGetAll);
             $res->execute();
-            $this->message = ["Code" => 200, "Message" => $res->fetchAll(\PDO::FETCH_ASSOC)];
+            $campos = $this->getCampos();
+            $this->message = ["Code" => 200, "Message" => $res->fetchAll(\PDO::FETCH_ASSOC), "Campos" => $campos];
         } catch (\PDOException $e) {
             $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 }
