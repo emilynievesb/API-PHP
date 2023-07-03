@@ -127,7 +127,6 @@ sideBar.addEventListener("click", (e) => {
                     }
                   })
                   .then((data) => {
-                    console.log(data.Code);
                     switch (data.Code) {
                       case 201:
                         alert(
@@ -145,11 +144,6 @@ sideBar.addEventListener("click", (e) => {
                         console.log("jola");
                         break;
                     }
-                  })
-                  .catch((error) => {
-                    console.log(JSON.stringify(error));
-                    console.error("Error:", error);
-                    alert("Error al actualizar el recurso: " + error.Message);
                   });
                 break;
               case "eliminar":
@@ -176,14 +170,7 @@ sideBar.addEventListener("click", (e) => {
                         break;
                       case "23000":
                         alert(data.Message);
-
-                      default:
-                        break;
                     }
-                  })
-                  .catch((error) => {
-                    console.error("Error:", error);
-                    alert("Error al eliminar el recurso: " + error.message);
                   });
                 console.log(e.target.dataset.id);
                 break;
@@ -281,20 +268,13 @@ sideBar2.addEventListener("click", (e) => {
             }
           })
           .then((data) => {
-            console.log(data.Message);
             switch (data.Code) {
               case 201:
                 alert("Dato agregado correctamente");
                 break;
               case "23000":
-                alert("La llave foranea ingresada no existe");
+                alert(data.Message);
             }
-          })
-          .catch((error) => {
-            console.log(JSON.stringify(error));
-            alert(
-              "Error al agregar el recurso: " + JSON.stringify(error).Message
-            );
           });
         e.stopImmediatePropagation();
       });
