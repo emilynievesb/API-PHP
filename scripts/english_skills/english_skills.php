@@ -66,7 +66,8 @@ class english_skills extends connect
             $res->execute();
             $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Inserted data", "res" => $res];
         } catch (\PDOException $e) {
-            /**Message es un array asociativo */if ($e->getCode() == 23000) {
+            /**Message es un array asociativo */
+            if ($e->getCode() == 23000) {
                 $pattern = '/`([^`]*)`/';
                 preg_match_all($pattern, $res->errorInfo()[2], $matches);
                 $matches = array_values(array_unique($matches[count($matches) - 1]));
@@ -99,7 +100,6 @@ class english_skills extends connect
                 $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Data updated"];
             } else {
                 $this->message = ["Code" => 404, "Message" => "Data not founded"];
-
             }
         } catch (\PDOException $e) {
             /**Message es un array asociativo */

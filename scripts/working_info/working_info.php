@@ -9,6 +9,7 @@ class working_info extends connect
     private $queryPost = 'INSERT INTO working_info (id_staff, years_exp, months_exp, id_work_reference, id_personal_ref, start_contract, end_contract)
     VALUES (:staff_fk, :n_years, :n_months, :work_reference_fk, :personal_ref_fk, :start_contract, :end_contract)';
     private $queryPut = 'UPDATE working_info SET id_staff = :staff_fk, years_exp = :n_years, months_exp = :n_months, id_work_reference =:work_reference_fk, id_personal_ref =:personal_ref_fk, start_contract =:start_contract,end_contract=:end_contract  WHERE  id = :id';
+    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "working_info" AND table_schema = "campusland"';
     private $queryGetAll = 'SELECT  working_info.id AS "id",
     working_info.id_staff AS "staff",
     working_info.years_exp AS "n_years",
@@ -16,9 +17,9 @@ class working_info extends connect
     working_info.id_work_reference AS "work_reference_fk",
     working_info.id_personal_ref AS "personal_ref_fk",
     working_info.start_contract AS "start_contract",
-    working_info.end_contract AS "end_contract"
+    working_info.end_contract AS "end_contract",
     personal_ref.full_name as "name_personal_ref_fk",
-    work_reference.full_name as "name_work_reference_fk",
+    work_reference.full_name as "name_work_reference_fk"
     FROM working_info
     INNER JOIN personal_ref ON working_info.id_personal_ref =  personal_ref.id
     INNER JOIN work_reference ON working_info.id_work_reference = work_reference.id';
@@ -30,7 +31,24 @@ class working_info extends connect
     function __construct(private $id = 1, private $id_staff = 1, private $years_exp = 1, private $months_exp = 1, public $id_work_reference = 1, private $id_personal_ref = 1, private $start_contract = 1, private $end_contract = 1)
     {
         parent::__construct();
-
+    }
+    public function getCampos()
+    {
+        $res = $this->conx->prepare($this->queryCampos);
+        try {
+            /**Execute es para ejecutar */
+            $res->execute();
+            $campos = array();
+            while ($row = $res->fetch(\PDO::FETCH_ASSOC)) {
+                $campos[] = $row["column_name"];
+            }
+            $this->message = $campos;
+        } catch (\PDOException $e) {
+            /**Message es un array asociativo */
+            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+        } finally {
+            return ($this->message);
+        }
     }
     public function post_working_info()
     {
@@ -50,10 +68,16 @@ class working_info extends connect
             $res->execute();
             $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Inserted data", "res" => $res];
         } catch (\PDOException $e) {
-            /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            /**Message es un array asociativo */if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea no contiene registros asociados en la tabla $matches[4]", $matches];
+            } else {
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 
@@ -78,13 +102,19 @@ class working_info extends connect
                 $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Data updated"];
             } else {
                 $this->message = ["Code" => 404, "Message" => "Data not founded"];
-
             }
         } catch (\PDOException $e) {
             /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea  no contiene registros asociados en la tabla $matches[4]"];
+            } else {
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 
@@ -105,9 +135,16 @@ class working_info extends connect
             }
         } catch (\PDOException $e) {
             /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede eliminar el id inicado ya que contiene registros asociados en la tabla $matches[1]"];
+            } else {
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 
@@ -116,11 +153,12 @@ class working_info extends connect
         try {
             $res = $this->conx->prepare($this->queryGetAll);
             $res->execute();
-            $this->message = ["Code" => 200, "Message" => $res->fetchAll(\PDO::FETCH_ASSOC)];
+            $campos = $this->getCampos();
+            $this->message = ["Code" => 200, "Message" => $res->fetchAll(\PDO::FETCH_ASSOC), "Campos" => $campos];
         } catch (\PDOException $e) {
             $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
         } finally {
-            print_r($this->message);
+            echo json_encode($this->message);
         }
     }
 }

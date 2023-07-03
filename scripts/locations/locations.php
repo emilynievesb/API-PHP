@@ -9,11 +9,8 @@ class locations extends connect
     private $queryGet = 'SELECT  id AS "id", name_location AS "name"  FROM locations WHERE  id = :id';
     private $queryPost = 'INSERT INTO locations (name_location) VALUES (:name)';
     private $queryPut = 'UPDATE locations SET name_location = :name WHERE  id = :id';
-    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "locations"';
+    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "locations" AND table_schema = "campusland"';
     private $queryGetAll = 'SELECT  id AS "id", name_location AS "name" FROM locations';
-    private $queryChild = 'SELECT TABLE_NAME
-    FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
-    WHERE REFERENCED_TABLE_NAME = :fatherTable';
     private $queryDelete = 'DELETE FROM locations WHERE id = :id';
     private $message;
 
@@ -22,7 +19,6 @@ class locations extends connect
     function __construct(public $id = 1, public $name_location = 1)
     {
         parent::__construct();
-
     }
     public function getCampos()
     {
@@ -69,8 +65,14 @@ class locations extends connect
             $res->execute();
             $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Inserted data", "res" => $res];
         } catch (\PDOException $e) {
-            /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            /**Message es un array asociativo */if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea no contiene registros asociados en la tabla $matches[4]", $matches];
+            } else {
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
             echo json_encode($this->message);
         }
@@ -92,14 +94,14 @@ class locations extends connect
                 $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Data updated"];
             } else {
                 $this->message = ["Code" => 404, "Message" => "Data not founded"];
-
             }
         } catch (\PDOException $e) {
-            /**Message es un array asociativo */if ($e->getCode() == 23000) {
+            /**Message es un array asociativo */
+            if ($e->getCode() == 23000) {
                 $pattern = '/`([^`]*)`/';
                 preg_match_all($pattern, $res->errorInfo()[2], $matches);
                 $matches = array_values(array_unique($matches[count($matches) - 1]));
-                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea  no contiene registros asociados en la tabla padre"];
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea  no contiene registros asociados en la tabla $matches[4]"];
             } else {
                 $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
             }

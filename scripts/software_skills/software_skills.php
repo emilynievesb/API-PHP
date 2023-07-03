@@ -30,7 +30,6 @@ class software_skills extends connect
     function __construct(private $id = 1, private $id_team_schedule = 1, private $id_journey = 1, private $id_trainer = 1, private $id_location = 1, private $id_subject = 1)
     {
         parent::__construct();
-
     }
     public function getCampos()
     {

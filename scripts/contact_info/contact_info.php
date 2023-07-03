@@ -8,7 +8,7 @@ class contact_info extends connect
 {
     private $queryPost = 'INSERT INTO contact_info (id_staff, whatsapp, instagram, linkedin, email, address, cel_number) VALUES (:staff_fk, :wpp, :ig, :linkedin, :email, :address, :number)';
     private $queryPut = 'UPDATE contact_info SET id_staff = :staff_fk, whatsapp = :wpp, instagram = :ig, linkedin =:linkedin, email =:email, address =:address,cel_number=:number  WHERE  id = :id';
-    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "contact_info"';
+    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "contact_info" AND table_schema = "campusland"';
     private $queryGetAll = 'SELECT  contact_info.id AS "id",
     contact_info.id_staff AS "staff_fk",
     contact_info.whatsapp AS "wpp",
@@ -28,9 +28,7 @@ class contact_info extends connect
     function __construct(private $id = 1, private $id_staff = 1, private $whatsapp = 1, private $instagram = 1, public $linkedin = 1, private $email = 1, private $address = 1, private $cel_number = 1)
     {
         parent::__construct();
-
     }
-
     public function getCampos()
     {
         $res = $this->conx->prepare($this->queryCampos);
@@ -67,13 +65,18 @@ class contact_info extends connect
             $res->execute();
             $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Inserted data", "res" => $res];
         } catch (\PDOException $e) {
-            /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            /**Message es un array asociativo */if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea no contiene registros asociados en la tabla $matches[4]", $matches];
+            } else {
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
             echo json_encode($this->message);
         }
     }
-
 
     public function update_contact_info($id)
     {
@@ -96,14 +99,14 @@ class contact_info extends connect
                 $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Data updated"];
             } else {
                 $this->message = ["Code" => 404, "Message" => "Data not founded"];
-
             }
         } catch (\PDOException $e) {
-            /**Message es un array asociativo */if ($e->getCode() == 23000) {
+            /**Message es un array asociativo */
+            if ($e->getCode() == 23000) {
                 $pattern = '/`([^`]*)`/';
                 preg_match_all($pattern, $res->errorInfo()[2], $matches);
                 $matches = array_values(array_unique($matches[count($matches) - 1]));
-                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea  no contiene registros asociados en la tabla padre"];
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea  no contiene registros asociados en la tabla $matches[4]"];
             } else {
                 $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
             }
@@ -141,7 +144,6 @@ class contact_info extends connect
             echo json_encode($this->message);
         }
     }
-
 
     public function getAll_contact_info()
     {

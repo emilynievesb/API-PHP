@@ -8,7 +8,7 @@ class staff extends connect
 {
     private $queryPost = 'INSERT INTO staff ( doc , first_name, second_name, first_surname, second_surname, eps, id_area, id_city) VALUES ( :doc, :first_name, :second_name,:first_surname, :second_surname, :eps, :area_fk, :city_fk)';
     private $queryPut = 'UPDATE staff SET doc = :doc, first_name = :first_name, second_name  = :second_name, first_surname = :first_surname, second_surname = :second_surname, eps = :eps, id_area = :area_fk, id_city = :city_fk WHERE  id = :id';
-    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "staff"';
+    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "staff" AND table_schema = "campusland"';
     private $queryGetAll = 'SELECT  staff.id AS "id",
     staff.doc  AS "doc",
     staff.first_name AS "first_name",
@@ -25,13 +25,11 @@ class staff extends connect
     INNER JOIN cities ON staff.id_city = cities.id';
     private $queryDelete = 'DELETE FROM staff WHERE id = :id';
     private $message;
-
     use getInstance;
     //*Se definen el tipo de dato: static, private, public
     function __construct(private $id = 1, public $doc = 1, public $first_name = 1, public $second_name = 1, public $first_surname = 1, public $second_surname = 1, private $eps = 1, private $id_area = 1, private $id_city = 1)
     {
         parent::__construct();
-
     }
     public function getCampos()
     {
@@ -70,8 +68,14 @@ class staff extends connect
             $res->execute();
             $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Inserted data", "res" => $res];
         } catch (\PDOException $e) {
-            /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            /**Message es un array asociativo */if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea no contiene registros asociados en la tabla $matches[4]", $matches];
+            } else {
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
             echo json_encode($this->message);
         }
@@ -99,14 +103,14 @@ class staff extends connect
                 $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Data updated"];
             } else {
                 $this->message = ["Code" => 404, "Message" => "Data not founded"];
-
             }
         } catch (\PDOException $e) {
-            /**Message es un array asociativo */if ($e->getCode() == 23000) {
+            /**Message es un array asociativo */
+            if ($e->getCode() == 23000) {
                 $pattern = '/`([^`]*)`/';
                 preg_match_all($pattern, $res->errorInfo()[2], $matches);
                 $matches = array_values(array_unique($matches[count($matches) - 1]));
-                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea  no contiene registros asociados en la tabla padre"];
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea  no contiene registros asociados en la tabla $matches[4]"];
             } else {
                 $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
             }
@@ -124,7 +128,6 @@ class staff extends connect
             $res->bindParam("id", $id);
             /**Execute es para ejecutar */
             $res->execute();
-
             if ($res->rowCount() > 0) {
                 $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Data deleted"];
             } else {
@@ -144,7 +147,6 @@ class staff extends connect
             echo json_encode($this->message);
         }
     }
-
     public function getAll_staff()
     {
         try {

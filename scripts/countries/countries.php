@@ -8,7 +8,7 @@ class countries extends connect
 {
     private $queryPost = 'INSERT INTO countries (name_country) VALUES (:name)';
     private $queryPut = 'UPDATE countries SET name_country = :name WHERE  id = :id';
-    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "countries"';
+    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "countries" AND table_schema = "campusland"';
     private $queryGetAll = 'SELECT  id AS "id", name_country AS "name" FROM countries';
     private $queryDelete = 'DELETE FROM countries WHERE id = :id';
     private $message;
@@ -18,7 +18,6 @@ class countries extends connect
     function __construct(public $id = 1, public $name_country = 1)
     {
         parent::__construct();
-
     }
     public function getCampos()
     {
@@ -50,8 +49,14 @@ class countries extends connect
             $res->execute();
             $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Inserted data", "res" => $res];
         } catch (\PDOException $e) {
-            /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            /**Message es un array asociativo */if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea no contiene registros asociados en la tabla $matches[4]", $matches];
+            } else {
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
             echo json_encode($this->message);
         }
@@ -72,14 +77,14 @@ class countries extends connect
                 $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Data updated"];
             } else {
                 $this->message = ["Code" => 404, "Message" => "Data not founded"];
-
             }
         } catch (\PDOException $e) {
-            /**Message es un array asociativo */if ($e->getCode() == 23000) {
+            /**Message es un array asociativo */
+            if ($e->getCode() == 23000) {
                 $pattern = '/`([^`]*)`/';
                 preg_match_all($pattern, $res->errorInfo()[2], $matches);
                 $matches = array_values(array_unique($matches[count($matches) - 1]));
-                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea  no contiene registros asociados en la tabla padre"];
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea  no contiene registros asociados en la tabla $matches[4]"];
             } else {
                 $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
             }
@@ -97,7 +102,6 @@ class countries extends connect
             $res->bindParam("id", $id);
             /**Execute es para ejecutar */
             $res->execute();
-
             if ($res->rowCount() > 0) {
                 $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Data deleted"];
             } else {
@@ -109,12 +113,12 @@ class countries extends connect
                 $pattern = '/`([^`]*)`/';
                 preg_match_all($pattern, $res->errorInfo()[2], $matches);
                 $matches = array_values(array_unique($matches[count($matches) - 1]));
-                $mensaje = ["Code" => $e->getCode(), "Message" => "Error, no se puede eliminar el id inicado ya que contiene registros asociados en la tabla $matches[1]"];
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede eliminar el id inicado ya que contiene registros asociados en la tabla $matches[1]"];
             } else {
-                $mensaje = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
             }
         } finally {
-            print_r($mensaje);
+            echo json_encode($this->message);
         }
     }
 

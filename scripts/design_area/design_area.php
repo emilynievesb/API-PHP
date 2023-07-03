@@ -8,7 +8,7 @@ class design_area extends connect
 {
     private $queryPost = 'INSERT INTO design_area ( id_area, id_staff, id_position, id_journey) VALUES ( :area_id_fk, :staff_id_fk, :position_id_fk, :journey_id_fk)';
     private $queryPut = 'UPDATE design_area SET id_area = :area_id_fk, id_staff = :staff_id_fk, id_position = :position_id_fk,id_journey  = :journey_id_fk WHERE  id = :id';
-    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "design_area"';
+    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "design_area" AND table_schema = "campusland"';
     private $queryGetAll = 'SELECT design_area.id AS "id",
     design_area.id_area AS "area_id_fk",
     design_area.id_staff AS "staff_id_fk",
@@ -31,7 +31,6 @@ class design_area extends connect
     function __construct(private $id = 1, private $id_area = 1, private $id_staff = 1, private $id_position = 1, private $id_journey = 1)
     {
         parent::__construct();
-
     }
     public function getCampos()
     {
@@ -62,13 +61,18 @@ class design_area extends connect
             $res->bindValue("staff_id_fk", $this->id_staff);
             $res->bindValue("position_id_fk", $this->id_position);
             $res->bindValue("journey_id_fk", $this->id_journey);
-
             /**Execute es para ejecutar */
             $res->execute();
             $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Inserted data", "res" => $res];
         } catch (\PDOException $e) {
-            /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            /**Message es un array asociativo */if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea no contiene registros asociados en la tabla $matches[4]", $matches];
+            } else {
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
             echo json_encode($this->message);
         }
@@ -92,14 +96,14 @@ class design_area extends connect
                 $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Data updated"];
             } else {
                 $this->message = ["Code" => 404, "Message" => "Data not founded"];
-
             }
         } catch (\PDOException $e) {
-            /**Message es un array asociativo */if ($e->getCode() == 23000) {
+            /**Message es un array asociativo */
+            if ($e->getCode() == 23000) {
                 $pattern = '/`([^`]*)`/';
                 preg_match_all($pattern, $res->errorInfo()[2], $matches);
                 $matches = array_values(array_unique($matches[count($matches) - 1]));
-                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea  no contiene registros asociados en la tabla padre"];
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea  no contiene registros asociados en la tabla $matches[4]"];
             } else {
                 $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
             }
@@ -117,7 +121,6 @@ class design_area extends connect
             $res->bindParam("id", $id);
             /**Execute es para ejecutar */
             $res->execute();
-
             if ($res->rowCount() > 0) {
                 $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Data deleted"];
             } else {

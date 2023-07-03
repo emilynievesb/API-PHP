@@ -8,7 +8,7 @@ class team_schedule extends connect
 {
     private $queryPost = 'INSERT INTO team_schedule (team_name, check_in_skills, check_out_skills,check_in_soft, check_out_soft, check_in_english, check_out_english, check_in_review, check_out_review, id_journey ) VALUES (:team_name, :check_in_skills, :check_out_skills, :check_in_soft, :check_out_soft, :check_in_english, :check_out_english, :check_in_review, :check_out_review, :journey_fk)';
     private $queryPut = 'UPDATE team_schedule SET team_name = :team_name, check_in_skills = :check_in_skills, check_out_skills = :check_out_skills, check_in_soft = :check_in_soft, check_out_soft = :check_out_soft, check_in_english = :check_in_english, check_out_english = :check_out_english, check_in_review = :check_in_review, check_out_review = :check_out_review, id_journey = :journey_fk WHERE  id = :id';
-    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "team_schedule"';
+    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "team_schedule" AND table_schema = "campusland"';
     private $queryGetAll = 'SELECT  team_schedule.id AS "id",
     team_schedule.team_name AS "team_name",
     team_schedule.check_in_skills AS "check_in_skills",
@@ -31,7 +31,6 @@ class team_schedule extends connect
     function __construct(private $id = 1, public $team_name = 1, public $check_in_skills = 1, public $check_out_skills = 1, public $check_in_soft = 1, public $check_out_soft = 1, public $check_in_english = 1, public $check_out_english = 1, public $check_in_review = 1, public $check_out_review = 1, private $id_journey = 1)
     {
         parent::__construct();
-
     }
     public function getCampos()
     {
@@ -72,8 +71,14 @@ class team_schedule extends connect
             $res->execute();
             $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Inserted data", "res" => $res];
         } catch (\PDOException $e) {
-            /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            /**Message es un array asociativo */if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea no contiene registros asociados en la tabla $matches[4]", $matches];
+            } else {
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
             echo json_encode($this->message);
         }
@@ -103,14 +108,14 @@ class team_schedule extends connect
                 $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Data updated"];
             } else {
                 $this->message = ["Code" => 404, "Message" => "Data not founded"];
-
             }
         } catch (\PDOException $e) {
-            /**Message es un array asociativo */if ($e->getCode() == 23000) {
+            /**Message es un array asociativo */
+            if ($e->getCode() == 23000) {
                 $pattern = '/`([^`]*)`/';
                 preg_match_all($pattern, $res->errorInfo()[2], $matches);
                 $matches = array_values(array_unique($matches[count($matches) - 1]));
-                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea  no contiene registros asociados en la tabla padre"];
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea  no contiene registros asociados en la tabla $matches[4]"];
             } else {
                 $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
             }
@@ -128,7 +133,6 @@ class team_schedule extends connect
             $res->bindParam("id", $id);
             /**Execute es para ejecutar */
             $res->execute();
-
             if ($res->rowCount() > 0) {
                 $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Data deleted"];
             } else {

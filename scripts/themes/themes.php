@@ -7,8 +7,8 @@ use APP\getInstance;
 
 class themes extends connect
 {
-    private $queryPost = 'INSERT INTO themes ( id_chapter, name_theme, start_date, end_date, description, duration_days ) VALUES ( :chapter_fk, :theme_name, :start_date, :end_date, :description, :days)';
-    private $queryPut = 'UPDATE themes SET id_chapter = :chapter_fk, start_date = :start_date, end_date = :end_date,description  = :description, duration_days  = :days, name_theme  = :theme_name WHERE  id = :id';
+    private $queryPost = 'INSERT INTO themes ( id_chapter, name_theme, start_date, end_date, description, duration_days ) VALUES ( :chapter_fk, :theme_name, :start_date, :end_date, :description, :days )';
+    private $queryPut = 'UPDATE themes SET id_chapter = :chapter_fk, start_date = :start_date, end_date = :end_date, description  = :description, duration_days  = :days, name_theme  = :theme_name WHERE  id = :id';
     private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "themes" AND table_schema = "campusland"';
     private $queryGetAll = 'SELECT  themes.id AS "id",
     themes.id_chapter AS "chapter_fk",
@@ -25,7 +25,7 @@ class themes extends connect
 
     use getInstance;
     //*Se definen el tipo de dato: static, private, public
-    function __construct(private $id = 1, private $id_chapter = 1, public $start_date = 1, public $end_date = 1, public $description = 1, public $duration_days = 1, private $name_theme = 1)
+    function __construct(private $id = 1, private $id_chapter = 1, private $name_theme = 1, public $start_date = 1, public $end_date = 1, public $description = 1, public $duration_days = 1)
     {
         parent::__construct();
 
@@ -98,7 +98,6 @@ class themes extends connect
                 $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Data updated"];
             } else {
                 $this->message = ["Code" => 404, "Message" => "Data not founded"];
-
             }
         } catch (\PDOException $e) {
             /**Message es un array asociativo */

@@ -8,8 +8,7 @@ class campers extends connect
 {
     private $queryPost = 'INSERT INTO campers (id_team_schedule, id_route, id_trainer,id_psycologist, id_teacher, id_level, id_journey,id_staff) VALUES (:schedule_fk, :route_fk, :trainer_fk, :psycologist_fk, :teacher_fk, :level_fk, :journey_fk, :staff_fk)';
     private $queryPut = 'UPDATE campers SET id_team_schedule = :schedule_fk, id_route = :route_fk, id_trainer = :trainer_fk, id_psycologist = :psycologist_fk, id_teacher = :teacher_fk, id_level = :level_fk, id_journey = :journey_fk, id_staff = :staff_fk WHERE  id = :id';
-    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "campers" AND table_schema = "campusland";
-    ';
+    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "campers" AND table_schema = "campusland"';
     private $queryGetAll = 'SELECT  campers.id AS "id",
     campers.id_team_schedule AS "schedule_fk",
     campers.id_route AS "route_fk",

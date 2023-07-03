@@ -8,7 +8,7 @@ class psychologist extends connect
 {
     private $queryPost = 'INSERT INTO psychologist (id_staff, id_route, id_academic_area_psycologist, id_position, id_team_educator) VALUES (:staff_fk,:route_fk, :academic_area_fk, :position_fk, :team_fk)';
     private $queryPut = 'UPDATE psychologist SET id_staff = :staff_fk, id_route = :route_fk, id_academic_area_psycologist = :academic_area_fk, id_position = :position_fk, id_team_educator = :team_fk  WHERE  id = :id';
-    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "psychologist"';
+    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "psychologist" AND table_schema = "campusland"';
     private $queryGetAll = 'SELECT  psychologist.id AS "id",
     psychologist.id_staff AS "staff_fk",
     psychologist.id_route AS "route_fk",
@@ -68,8 +68,14 @@ class psychologist extends connect
             $res->execute();
             $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Inserted data", "res" => $res];
         } catch (\PDOException $e) {
-            /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            /**Message es un array asociativo */if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea no contiene registros asociados en la tabla $matches[4]", $matches];
+            } else {
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
             echo json_encode($this->message);
         }
@@ -94,7 +100,6 @@ class psychologist extends connect
                 $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Data updated"];
             } else {
                 $this->message = ["Code" => 404, "Message" => "Data not founded"];
-
             }
         } catch (\PDOException $e) {
             /**Message es un array asociativo */

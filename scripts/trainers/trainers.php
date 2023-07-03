@@ -6,17 +6,17 @@ use APP\getInstance;
 
 class trainers extends connect
 {
-    private $queryPost = 'INSERT INTO trainers (id_staff, id_level, id_route, id_academic_area, id_position, id_team_educator) VALUES (:staff_fk,:level_fk, :route_fk, :academic_area_fk, :position_fk, :team_fk)';
+    private $queryPost = 'INSERT INTO trainers (id_staff, id_level, id_route, id_academic_area, id_position, id_team_educator) VALUES (:staff_fk,:level_fk, :route_fk, :academic_area_fk, :position_fk, :team_educator_fk)';
     private $queryPut = 'UPDATE trainers SET id_staff = :staff_fk, id_level = :level_fk, id_route = :route_fk, id_academic_area = :academic_area_fk,
-    id_position = :position_fk, id_team_educator = :team_fk WHERE id = :id';
-    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "trainers"';
+    id_position = :position_fk, id_team_educator = :team_educator_fk WHERE id = :id';
+    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "trainers" AND table_schema = "campusland"';
     private $queryGetAll = 'SELECT  trainers.id AS "id",
     trainers.id_staff AS "staff_fk",
     trainers.id_level AS "level_fk",
     trainers.id_route AS "route_fk",
     trainers.id_academic_area AS "academic_area_fk",
     trainers.id_position AS "position_fk",
-    trainers.id_team_educator AS "team_fk",
+    trainers.id_team_educator AS "team_educator_fk",
     staff.first_name AS "name_staff",
     levels.name_level AS "name_level_fk",
     routes.name_route AS "name_route_fk",
@@ -68,13 +68,19 @@ class trainers extends connect
             $res->bindValue("route_fk", $this->id_route);
             $res->bindValue("academic_area_fk", $this->id_academic_area);
             $res->bindValue("position_fk", $this->id_position);
-            $res->bindValue("team_fk", $this->id_team_educator);
+            $res->bindValue("team_educator_fk", $this->id_team_educator);
             /**Execute es para ejecutar */
             $res->execute();
             $this->message = ["Code" => 200 + $res->rowCount(), "Message" => "Inserted data", "res" => $res];
         } catch (\PDOException $e) {
-            /**Message es un array asociativo */
-            $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            /**Message es un array asociativo */if ($e->getCode() == 23000) {
+                $pattern = '/`([^`]*)`/';
+                preg_match_all($pattern, $res->errorInfo()[2], $matches);
+                $matches = array_values(array_unique($matches[count($matches) - 1]));
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea no contiene registros asociados en la tabla $matches[4]", $matches];
+            } else {
+                $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
+            }
         } finally {
             echo json_encode($this->message);
         }
@@ -93,7 +99,7 @@ class trainers extends connect
             $res->bindValue("route_fk", $this->id_route);
             $res->bindValue("academic_area_fk", $this->id_academic_area);
             $res->bindValue("position_fk", $this->id_position);
-            $res->bindValue("team_fk", $this->id_team_educator);
+            $res->bindValue("team_educator_fk", $this->id_team_educator);
             /**Execute es para ejecutar */
             $res->execute();
             if ($res->rowCount() > 0) {
@@ -102,11 +108,12 @@ class trainers extends connect
                 $this->message = ["Code" => 404, "Message" => "Data not founded"];
             }
         } catch (\PDOException $e) {
-            /**Message es un array asociativo */if ($e->getCode() == 23000) {
+            /**Message es un array asociativo */
+            if ($e->getCode() == 23000) {
                 $pattern = '/`([^`]*)`/';
                 preg_match_all($pattern, $res->errorInfo()[2], $matches);
                 $matches = array_values(array_unique($matches[count($matches) - 1]));
-                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea  no contiene registros asociados en la tabla padre"];
+                $this->message = ["Code" => $e->getCode(), "Message" => "Error, no se puede actualizar ya que el id indicado de la llave foranea  no contiene registros asociados en la tabla $matches[4]"];
             } else {
                 $this->message = ["Code" => $e->getCode(), "Message" => $res->errorInfo()[2]];
             }

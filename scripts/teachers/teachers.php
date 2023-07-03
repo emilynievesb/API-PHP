@@ -8,7 +8,7 @@ class teachers extends connect
 {
     private $queryPost = 'INSERT INTO teachers (id_staff, id_route, id_academic_area, id_position, id_team_educator) VALUES (:staff_fk, :route_fk, :academic_area_fk, :position_fk, :team_educator_fk)';
     private $queryPut = 'UPDATE teachers SET id_staff = :staff_fk, id_route = :route_fk, id_academic_area = :academic_area_fk, id_position = :position_fk, id_team_educator = :team_educator_fk WHERE  id = :id';
-    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "teachers"';
+    private $queryCampos = 'SELECT column_name FROM information_schema.columns WHERE table_name = "teachers" AND table_schema = "campusland"';
     private $queryGetAll = 'SELECT  teachers.id AS "id",
     teachers.id_staff  AS "staff_fk",
     teachers.id_route  AS "route_fk",
@@ -32,7 +32,6 @@ class teachers extends connect
     function __construct(public $id = 1, private $id_staff = 1, private $id_route = 1, private $id_academic_area = 1, private $id_position = 1, private $id_team_educator = 1)
     {
         parent::__construct();
-
     }
     public function getCampos()
     {
@@ -102,7 +101,8 @@ class teachers extends connect
                 $this->message = ["Code" => 404, "Message" => "Data not founded"];
             }
         } catch (\PDOException $e) {
-            /**Message es un array asociativo */if ($e->getCode() == 23000) {
+            /**Message es un array asociativo */
+            if ($e->getCode() == 23000) {
                 $pattern = '/`([^`]*)`/';
                 preg_match_all($pattern, $res->errorInfo()[2], $matches);
                 $matches = array_values(array_unique($matches[count($matches) - 1]));
